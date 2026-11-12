@@ -10,7 +10,7 @@
 
 ## 1. Express 서버 실행 - 터미널 1
 ```powershell
-cd C:\Projects\CodeMate-AI\server
+cd server
 npm install
 npm run dev
 ```
@@ -20,7 +20,7 @@ npm run dev
 
 ## 2. React 웹사이트 실행 - 터미널 2
 ```powershell
-cd C:\Projects\CodeMate-AI\client
+cd client
 npm install
 npm run dev
 ```
