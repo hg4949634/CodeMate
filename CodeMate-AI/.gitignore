@@ -1,0 +1,12 @@
+# Dependencies and builds
+node_modules/
+dist/
+
+# Secrets (never commit an API key)
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+.vscode/
