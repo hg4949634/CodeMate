@@ -32,6 +32,10 @@ export default function App() {
   const [analysisError, setAnalysisError] = useState('');
   const [analysisNotice, setAnalysisNotice] = useState('');
   const [lastSavedId, setLastSavedId] = useState(null);
+  // 4주차: 저장된 분석 기록으로 구성하는 로컬 학습 대시보드
+  const [insights, setInsights] = useState(null);
+  const [loadingInsights, setLoadingInsights] = useState(true);
+  const [insightsError, setInsightsError] = useState('');
 
   const refreshHistory = useCallback(async () => {
     setHistoryError('');
@@ -46,6 +50,19 @@ export default function App() {
       setHistoryError(`제출 기록을 불러오지 못했습니다. ${e.message}`);
     } finally {
       setLoadingHistory(false);
+    }
+  }, []);
+
+  // 이미 저장된 분석 기록을 집계합니다. 이 요청으로 OpenAI API를 호출하지 않습니다.
+  const refreshInsights = useCallback(async () => {
+    setInsightsError('');
+    try {
+      const data = await fetch('/api/insights').then(readResponse);
+      setInsights(data.insights);
+    } catch (e) {
+      setInsightsError(`학습 분석 현황을 불러오지 못했습니다. ${e.message}`);
+    } finally {
+      setLoadingInsights(false);
     }
   }, []);
 
@@ -67,7 +84,8 @@ export default function App() {
     }
     loadProblems();
     refreshHistory();
-  }, [refreshHistory]);
+    refreshInsights();
+  }, [refreshHistory, refreshInsights]);
 
   const selectedProblem = problems.find((p) => p.id === selectedId);
   const visibleSubmissions = submissions.filter((item) =>
@@ -112,7 +130,7 @@ export default function App() {
       }).then(readResponse);
       setSaveMessage(`${data.message} 제출 번호 #${data.submission.id}`);
       setLastSavedId(data.submission.id);
-      await refreshHistory();
+      await Promise.all([refreshHistory(), refreshInsights()]);
     } catch (e) {
       setSaveError(`제출하지 못했습니다. ${e.message}`);
     } finally {
@@ -129,7 +147,7 @@ export default function App() {
     setAnalyzingId(id);
     try {
       const data = await fetch(`/api/submissions/${id}/analyze`, { method: 'POST' }).then(readResponse);
-      await refreshHistory();
+      await Promise.all([refreshHistory(), refreshInsights()]);
       setAnalysisNotice(`제출 #${id}: ${data.cached ? '저장된 AI 분석을 불러왔습니다.' : 'AI 분석을 완료했습니다.'}`);
       setLastSavedId(null);
       document.getElementById('history')?.scrollIntoView({ behavior: 'smooth' });
@@ -138,6 +156,16 @@ export default function App() {
     } finally {
       setAnalyzingId(null);
     }
+  }
+
+  // 추천된 문제는 기존에 준비된 문제 목록에서 불러옵니다. AI가 새 문제를 생성하지 않습니다.
+  function openRecommendation(problemId) {
+    const problem = problems.find((p) => p.id === problemId);
+    if (!problem) return;
+    if (selectedProblem && code !== selectedProblem.starterCode &&
+        !window.confirm('현재 편집기에서 작성한 미제출 코드가 사라질 수 있습니다. 추천 문제를 여시겠습니까?')) return;
+    selectProblem(problem);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   // 지난 제출 기록의 코드를 현재 편집기로 가져옵니다. (기존 기록은 수정하지 않음)
@@ -159,14 +187,15 @@ export default function App() {
         <div className="brand"><div className="logo">{'</>'}</div><span>CodeMate <b>AI</b></span></div>
         <div className="nav-label">LEARNING SPACE</div>
         <div className="nav-current">▣ &nbsp; C언어 기초 문제</div>
+        <a className="nav-link" href="#insights">▥ &nbsp; 취약 개념 대시보드</a>
         <a className="nav-link" href="#history">◷ &nbsp; 나의 제출 기록</a>
-        <div className="sidebar-foot">WEEK 03 · AI 코드 분석 및 힌트<br/>코드 실행·자동 채점은 제공하지 않음</div>
+        <div className="sidebar-foot">WEEK 04 · 누적 분석 및 복습 추천<br/>코드 실행·자동 채점은 제공하지 않음</div>
       </aside>
 
       <main className="main">
-        <div className="topline"><span>CODING LEARNING ASSISTANT</span><span className="status">● 3주차 개발</span></div>
+        <div className="topline"><span>CODING LEARNING ASSISTANT</span><span className="status">● 4주차 개발</span></div>
         <h1>반복되는 실수를 <em>학습의 기회</em>로.</h1>
-        <p className="lead">C언어 문제를 선택하고 코드를 제출해 보세요. 제출 코드를 저장한 후 AI 분석을 요청해 오류 가능성과 단계별 힌트를 확인할 수 있습니다.</p>
+        <p className="lead">C언어 코드를 제출하고 AI 피드백을 받아보세요. 누적된 기록으로 개념별 복습 신호를 확인하고 필요한 문제를 다시 연습할 수 있습니다.</p>
 
         <div className="stats">
           <div className="stat"><span>준비된 문제</span><strong>{problems.length}</strong></div>
@@ -245,6 +274,62 @@ export default function App() {
           </section>
         </div>
 
+        {/* 4주차: 기존 SQLite 기록에서 계산한 누적 학습 정보 */}
+        <section className="insights-panel" id="insights">
+          <div className="history-header">
+            <div>
+              <h2>나의 취약 개념 분석</h2>
+              <p>AI의 오류 가능성 판단과 직접 선택한 복습 표시를 누적해 보여 줍니다. 실제 채점 결과나 실력 점수는 아닙니다.</p>
+            </div>
+            <button type="button" className="secondary-button" onClick={refreshInsights}>현황 새로고침</button>
+          </div>
+
+          {loadingInsights && <p className="notice">학습 기록을 분석하고 있습니다...</p>}
+          {insightsError && <p className="error" role="alert">{insightsError}</p>}
+          {insights && <>
+            <div className="insights-overview">
+              <div><span>AI 분석 완료</span><b>{insights.totals.analyzedSubmissions}</b><small>회</small></div>
+              <div><span>AI 오류 가능성</span><b>{insights.totals.potentialErrorCount}</b><small>회 · 미확정</small></div>
+              <div><span>직접 복습 표시</span><b>{insights.totals.manualReviewCount}</b><small>회</small></div>
+              <div><span>개념 보완 제안</span><b>{insights.totals.improvementCount}</b><small>회</small></div>
+            </div>
+
+            <div className="insights-grid">
+              <div className="insights-card">
+                <h3>개념별 복습 신호</h3>
+                <p className="insights-help">수치가 클수록 기존 기록에서 복습할 이유가 자주 나타났다는 뜻입니다.</p>
+                {insights.totals.analyzedSubmissions === 0 && insights.totals.manualReviewCount === 0 &&
+                  <p className="notice">아직 분석 기록이나 복습 표시가 없습니다. 코드를 제출해 분석해 보세요.</p>}
+                <div className="concept-list">
+                  {insights.concepts.map((item) => {
+                    const max = Math.max(1, ...insights.concepts.map((c) => c.reviewSignal));
+                    return <div className="concept-row" key={item.concept}>
+                      <div className="concept-row-top"><b>{item.concept}</b><span>복습 신호 {item.reviewSignal}</span></div>
+                      <div className="concept-track"><div className="concept-fill" style={{ width: `${(item.reviewSignal / max) * 100}%` }} /></div>
+                      <div className="concept-meta">AI 오류 가능성 {item.potentialErrorCount}회 · 개념 보완 {item.improvementCount}회 · 직접 복습 {item.manualReviewCount}회</div>
+                    </div>;
+                  })}
+                </div>
+              </div>
+              <div className="insights-card">
+                <h3>맞춤형 복습 문제 추천</h3>
+                <p className="insights-help">누적된 복습 신호를 기준으로 기존 C언어 문제 4개 중에서 추천합니다.</p>
+                {insights.recommendations.length === 0 ?
+                  <div className="empty-recommendation">현재 추천할 복습 문제가 없습니다. 분석 결과가 쌓이면 여기에 표시돼요.</div> :
+                  <div className="recommendation-list">{insights.recommendations.map((item, i) =>
+                    <div key={item.problemId} className="recommendation-item">
+                      <div className="recommendation-title"><span className="recommendation-rank">{i + 1}</span><strong>{item.problemTitle}</strong><span className="chip">{item.concept}</span></div>
+                      <p>{item.reason}</p>
+                      <button type="button" className="restore-button" onClick={() => openRecommendation(item.problemId)}>이 문제 복습하기</button>
+                    </div>
+                  )}</div>
+                }
+              </div>
+            </div>
+          </>}
+          <p className="ai-disclaimer">※ 복습 신호 = AI 오류 가능성 × 2 + 직접 복습 표시 + 개념 보완. 정답률·실력 점수가 아니며, 같은 제출에서 신호가 중복 반영될 수 있습니다. 이전에 저장된 결과만 읽으므로 이 대시보드 조회에는 GPT API 비용이 들지 않습니다.</p>
+        </section>
+
         <section className="history-panel" id="history">
           <div className="history-header">
             <div><h2>나의 제출 기록</h2><p>최근 50개의 제출 코드를 확인하고, 원하는 제출에 대해 AI 분석을 요청할 수 있습니다.</p></div>
@@ -300,7 +385,7 @@ export default function App() {
             ))}
           </div>
         </section>
-        <footer>CodeMate AI · 3주차 · AI는 오류 가능성을 설명하며 실제 코드를 컴파일하거나 채점하지 않습니다.</footer>
+        <footer>CodeMate AI · 4주차 · AI의 분석은 추정 피드백이며 실제 코드를 컴파일하거나 채점하지 않습니다.</footer>
       </main>
     </div>
   );

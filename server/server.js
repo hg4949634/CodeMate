@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import problems from './data/problems.js';
-import { createSubmission, getSubmissions, getSubmissionStats, getSubmissionById, saveAnalysis } from './db.js';
+import { createSubmission, getSubmissions, getSubmissionStats, getSubmissionById, saveAnalysis, getLearningInsights } from './db.js';
 import { analyzeCode } from './ai.js';
 
 const app = express();
@@ -75,6 +75,12 @@ app.get('/api/submissions', (req, res) => {
 // 2주차 핵심 기능 3: 대시보드에 보여 줄 숫자를 계산합니다.
 app.get('/api/stats', (req, res) => {
   res.json({ stats: getSubmissionStats() });
+});
+
+// 4주차: 기존 AI 분석과 수동 복습 표시를 이용한 개념별 대시보드입니다.
+// 별도의 OpenAI API 호출을 하지 않으므로 새로운 분석 비용이 발생하지 않습니다.
+app.get('/api/insights', (req, res) => {
+  res.json({ insights: getLearningInsights(problems) });
 });
 
 // 3주차 핵심 기능: 이미 저장된 제출의 코드만 분석합니다.

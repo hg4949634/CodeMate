@@ -4,6 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildLearningInsights } from './insights.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dbPath = process.env.CODEMATE_DB_PATH
@@ -126,6 +127,23 @@ export function saveAnalysis({ submissionId, analysis, model }) {
     ON CONFLICT(submission_id) DO NOTHING
   `).run(submissionId, JSON.stringify(analysis), model, analyzedAt);
   return getSubmissionById(submissionId);
+}
+
+// 4주차: 모든 누적 기록을 이용해 개념별 복습 신호를 계산합니다.
+// 프론트엔드에 원본 제출 코드나 API 키를 전달하지 않습니다.
+export function getLearningInsights(problemList) {
+  const rows = db.prepare(`
+    SELECT s.problem_id, s.needs_review, a.analysis_json
+    FROM submissions AS s
+    LEFT JOIN analyses AS a ON a.submission_id = s.id
+    ORDER BY s.id DESC
+  `).all();
+  const records = rows.map((r) => ({
+    problemId: r.problem_id,
+    needsReview: r.needs_review === 1,
+    analysis: r.analysis_json ? JSON.parse(r.analysis_json) : null,
+  }));
+  return buildLearningInsights(records, problemList);
 }
 
 // 테스트 전용으로 연결을 닫을 때만 사용합니다.

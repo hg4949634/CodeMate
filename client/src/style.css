@@ -109,3 +109,33 @@ footer { color: #768da9; font-size: 12px; margin-top: 24px; }
 .hint-list { border-top:1px solid #315565; margin-top:18px; padding-top:15px; color:#baf4ea; font-size:13px; }
 .hint-list ol { color:#d5e6f3; line-height:1.85; padding-left:23px; }
 .hint-list li { margin-top:7px; }
+
+/* ────────── 4주차: 누적 취약점 분석과 복습 문제 추천 ────────── */
+.insights-panel { margin: 22px 0; padding: 25px; border: 1px solid #2b405e; border-radius: 16px; background: #14243a; scroll-margin-top: 20px; }
+.insights-overview { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 20px 0; }
+.insights-overview > div { min-width: 0; border: 1px solid #31526a; border-radius: 11px; background: #102338; padding: 16px; }
+.insights-overview span { display: block; color: #95b1cb; font-size: 12px; margin-bottom: 9px; }
+.insights-overview b { font-size: 26px; color: #a8f3e9; margin-right: 5px; }
+.insights-overview small { color: #93a9c0; font-size: 11px; }
+.insights-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.insights-card { min-width: 0; background: #101d32; border: 1px solid #2d4462; border-radius: 13px; padding: 22px; }
+.insights-card h3 { margin: 0; color: #d9f9f4; font-size: 18px; }
+.insights-help { margin: 9px 0 20px; color: #96aac5; line-height: 1.7; font-size: 12px; }
+.concept-list { display: grid; gap: 17px; }
+.concept-row-top { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.concept-row-top b { font-size: 13px; }
+.concept-row-top span { font-size: 12px; color: #9db6cc; }
+.concept-track { background: #294056; height: 11px; border-radius: 8px; overflow: hidden; }
+.concept-fill { background: linear-gradient(90deg, #329baf, #65dfce); height: 100%; border-radius: 8px; transition: width .25s; }
+.concept-meta { color: #88a4c2; font-size: 11px; margin-top: 8px; line-height: 1.55; }
+.recommendation-list { display: grid; gap: 12px; }
+.recommendation-item { border: 1px solid #2d5163; border-radius: 11px; background: #17283d; padding: 15px; }
+.recommendation-title { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.recommendation-title strong { font-size: 14px; }
+.recommendation-title .chip { font-size: 10px; padding: 5px 8px; }
+.recommendation-rank { display: inline-flex; align-items: center; justify-content: center; background: #19434b; color: #a9f4e5; font-weight: 800; border-radius: 8px; width: 26px; height: 26px; }
+.recommendation-item p { color: #afc3d9; font-size: 12px; line-height: 1.65; margin: 10px 0 5px; }
+.recommendation-item .restore-button { margin-top: 8px; }
+.empty-recommendation { border: 1px dashed #35506e; border-radius: 10px; padding: 23px; color: #9ab1cc; font-size: 13px; line-height: 1.7; }
+@media (max-width: 1050px) { .insights-grid { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .insights-panel { padding: 16px; } .insights-overview { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; } .insights-overview > div { padding: 12px; } .insights-card { padding: 15px; } }

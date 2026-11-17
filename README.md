@@ -1,36 +1,36 @@
-# CodeMate AI — Week 3 (OpenAI API 분석)
+# CodeMate AI — 4주차 최종 통합 버전
 
-기존 1~2주차의 React + Express + SQLite 구조에 **AI 코드 오류 가능성 분석 및 단계별 힌트**를 연결한 업데이트입니다.
+React + Vite(프론트엔드), Express(백엔드), SQLite(제출 기록), OpenAI API(코드 분석)를 결합한 **로컬 학습 프로토타입**입니다.
 
-## 설치 전 확인
+## 4주차 새 기능
 
-- Node.js 24.15 이상 권장 (`node -v`)
-- GitHub 저장소에서 2주차까지 변경 사항 커밋 권장
-- `server/data/codemate.sqlite`는 기존 기록이 담겨 있으니 **삭제하거나 덮어쓰지 마세요**.
+1. **개념별 누적 학습 대시보드**: AI가 표시한 오류 가능성, 개념 보완, 학습자가 직접 선택한 복습 표시를 개념별로 보여 줍니다.
+2. **복습 문제 추천**: 누적 기록의 '복습 신호'가 큰 개념을 우선으로, **기존에 준비된 C언어 문제 4개**에서 연습 문제를 추천합니다. 새 문제를 GPT가 생성하지는 않습니다.
+3. **통계 조회 API**: `GET /api/insights`에서 개인정보나 제출 코드를 포함하지 않은 집계 결과를 반환합니다.
+4. **자동 테스트**: 기존 제출/분석 기능의 테스트와 새 통계·추천 기능의 테스트를 합쳐 **11개 오프라인 테스트**를 제공합니다.
 
-## 덮어쓰기 방식
+### 반드시 알아둘 한계
 
-`CodeMate-AI/` 폴더가 이미 있다면 업데이트 ZIP의 `client/`, `server/`, `.gitignore`, `README.md` 파일만 병합하세요.
-`node_modules/`, `codemate.sqlite`, `.env`는 **업데이트 ZIP에 포함하지 않았습니다**.
+- AI 분석은 실제 컴파일·실행·정답 판정이 아닙니다.
+- '명확한 오류 없음'은 '실제 정답'을 뜻하지 않습니다.
+- 대시보드의 **복습 신호 = (AI 오류 가능성 횟수 × 2) + 직접 복습 표시 횟수 + 개념 보완 횟수**입니다. 모델의 확률, 정답률, 임상적 점수 또는 학습 능력 측정치가 아닙니다. 같은 제출에 복습 표시와 AI 오류 가능성이 모두 있을 수 있습니다.
+- 추천은 현재 문제 4개를 다시 풀어보도록 안내하는 **간단한 규칙 기반 추천**입니다. 별도로 AI가 복습 문제를 생성하지 않습니다.
+- 로그인 기능이 없는 **1인용 로컬 실습 앱**이며 공개 서버에 그대로 배포하면 안 됩니다.
+- `GET /api/insights`나 추천 문제 클릭은 GPT API를 호출하지 않습니다. **새 제출에 대한 AI 분석 버튼을 누를 때만** API 비용이 발생할 수 있습니다.
 
-## 1. API 키 발급
+## 1. 기존 3주차 파일에 적용
 
-1. https://platform.openai.com/api-keys 에서 API 키를 생성합니다.
-2. https://platform.openai.com/settings/organization/billing 에서 크레딧/결제 여부를 확인합니다. ChatGPT 구독과 API 요금은 별개입니다.
-3. `server/.env.example`을 **복사**해 `server/.env` 파일을 만듭니다.
-4. 아래처럼 설정합니다. 키는 절대 캡처하거나 채팅, GitHub에 올리지 마세요.
+1. 서버와 클라이언트가 실행 중이면 각 터미널에서 `Ctrl + C`로 중지합니다.
+2. GitHub Desktop으로 **3주차 완료본을 먼저 Commit**합니다.
+3. `server/data/codemate.sqlite`를 로컬의 다른 위치에 백업하는 것을 권장합니다.
+4. **Week4_Update_Only.zip의 `client/`, `server/`, `README.md`, `WEEK4_TEST_PLAN.md`**를 현재 프로젝트 최상위 `CodeMate` 폴더에 복사하고 같은 이름의 소스 파일을 덮어씁니다.
+5. **`server/data/codemate.sqlite`와 `server/.env`는 절대 삭제하거나 덮어쓰지 않습니다.** 업데이트 ZIP에는 이 두 파일이 없습니다.
 
-```env
-PORT=3001
-OPENAI_API_KEY=실제_API_키_값
-OPENAI_MODEL=gpt-5-mini
-```
+## 2. 실행 방법 (Windows PowerShell / VS Code)
 
-`.gitignore`가 `.env`를 제외하는지 반드시 확인하세요. 키는 서버에만 저장합니다.
+VS Code로 `client/`, `server/`가 직접 보이는 프로젝트 최상위 폴더를 열고, 터미널 두 개를 사용합니다.
 
-## 2. 서버 실행
-
-CodeMate-AI 폴더 기준 VS Code 터미널 1:
+터미널 1:
 
 ```powershell
 cd server
@@ -38,7 +38,7 @@ npm install
 npm run dev
 ```
 
-다른 터미널 2:
+터미널 2 (새 터미널):
 
 ```powershell
 cd client
@@ -46,66 +46,58 @@ npm install
 npm run dev
 ```
 
-브라우저에서 http://127.0.0.1:5173 열기. 서버 확인: http://127.0.0.1:3001/api/health
+React 웹사이트: http://127.0.0.1:5173  
+Express 정상 상태: http://127.0.0.1:3001/api/health  
+누적 통계 JSON: http://127.0.0.1:3001/api/insights
 
-## 3. AI 분석 테스트
+Node.js 24.15.0 환경에서 설계했으며, Node 내장 `node:sqlite`을 사용합니다.
 
-1. 2번 '배열 원소의 합' 문제를 선택합니다.
-2. 아래처럼 인덱스 범위 오류 가능성이 있는 코드를 작성합니다.
+## 3. 사용자 확인 순서
 
-```c
-#include <stdio.h>
-int main(void) {
-    int arr[5] = {1,2,3,4,5};
-    int sum = 0;
-    for (int i = 0; i <= 5; i++) sum += arr[i];
-    printf("%d\n", sum);
-    return 0;
-}
-```
+1. 기존 문제 4개와 제출 기록이 그대로 있는지 확인합니다.
+2. 새 메뉴 **'취약 개념 대시보드'**를 클릭합니다.
+3. 저장된 AI 분석으로 개념별 '복습 신호'가 표시되는지 확인합니다.
+4. 복습 신호가 있으면 관련 문제의 **'이 문제 복습하기'**를 클릭합니다. 편집 중인 코드가 있다면 덮어쓰기 확인이 나옵니다.
+5. 복습 문제를 새로 작성해 제출합니다.
+6. **서버를 재시작한 뒤** 기록과 대시보드가 유지되는지 확인합니다.
+7. 자세한 최종 테스트 절차는 `WEEK4_TEST_PLAN.md`를 참고합니다.
 
-3. `코드 제출 · 기록 저장` 버튼으로 **먼저 저장**합니다.
-4. `방금 제출한 #번호 AI로 분석하기` 또는 제출 기록의 `AI로 오류 분석하기`를 누릅니다.
-5. 서버가 코드를 OpenAI API로 보내고 JSON 분석 결과를 받아 SQLite에 저장합니다.
-6. 분석이 완료되면 `나의 제출 기록`에서 오류 유형, 설명, 3단계 힌트를 확인할 수 있습니다.
-7. 같은 제출은 다시 요청해도 **기존 저장 결과**를 반환하여 추가 과금을 피합니다. 코드를 바꾸려면 새로 제출해야 합니다.
-
-**주의:** 실제 컴파일/실행/정답 채점은 하지 않습니다. 분석은 추정 정보입니다. 모델이 잘못 답할 수 있습니다.
-
-## 4. 테스트
+## 4. 자동 테스트
 
 ```powershell
 cd server
 npm test
 ```
 
-DB 저장과 응답 JSON 검증용 오프라인 테스트이며, 유료 API를 호출하지 않습니다. `node:sqlite`의 실험적 API 안내가 보일 수 있습니다.
+- 전체 **11개 테스트**가 실행되어야 합니다.
+- AI API를 직접 호출하지 않으므로 테스트만으로 GPT 비용은 발생하지 않습니다.
+- 기존 3주차 테스트 6개 + 누적 통계 통합 1개 + 신규 분석 규칙 테스트 4개입니다.
 
-## 5. 주요 변경 파일
+## 5. 핵심 파일 설명
 
 | 경로 | 역할 |
 |---|---|
-| server/ai.js | OpenAI Responses API 호출 및 JSON 검증 |
-| server/server.js | POST /api/submissions/:id/analyze 추가 |
-| server/db.js | analyses 테이블 자동 추가 및 조회 |
-| server/.env.example | API 키 설정 예시 (실제 키 아님) |
-| server/package.json | `openai` SDK 의존성 추가 |
-| client/src/App.jsx | 제출 기록별 AI 분석 요청 및 결과 표시 |
-| client/src/style.css | 분석 카드 디자인 |
-| server/test/* | 네트워크 없는 자동 테스트 |
+| `server/insights.js` | 누적 복습 신호 집계 및 복습 문제 추천 로직 (순수 JavaScript) |
+| `server/db.js` | 기존 SQLite 제출 기록을 전체 조회해 통계 계산 |
+| `server/server.js` | `GET /api/insights` 추가 |
+| `client/src/App.jsx` | 대시보드와 추천 문제 선택 UI |
+| `client/src/style.css` | 기존 다크 네이비 UI와 일치하는 새 화면 스타일 |
+| `server/test/insights.test.js` | 복습 신호 및 추천의 단위 테스트 |
+| `server/test/db.test.js` | DB 읽기 및 기존 기능 통합 테스트 |
+| `WEEK4_TEST_PLAN.md` | 수동 검증 시나리오 및 최종 보고서 자료 수집 방법 |
 
-## 6. 문제 해결
+## 6. API 키와 GitHub 보안
 
-- `OPENAI_API_KEY` 에러: `server/.env` 존재 여부 및 서버 재시작 확인
-- `401`: API 키 확인 (공유하지 마세요)
-- `429`: API 사용량/요금/요청 한도 확인
-- `Cannot find package 'openai'`: `server`에서 `npm install` 재실행
-- `fetch failed`: 서버 실행 여부와 API 네트워크 연결 확인
-- 코드 제출은 성공하지만 AI 분석 실패: 저장 기록은 그대로 유지되고, 다시 분석 버튼을 눌러 재시도할 수 있음
+`server/.env`에 기존 3주차 설정을 유지합니다.
 
-## 7. 설계상 한계 및 4주차 개선 과제
+```env
+PORT=3001
+OPENAI_API_KEY=여기에_본인_키
+OPENAI_MODEL=gpt-5-mini
+```
 
-- AI는 코드를 **직접 실행하지 않음**. 테스트가 없는 분석을 정답 판정처럼 표현하지 않습니다.
-- 인증 기능이 없는 **단일 사용자 로컬 프로토타입**. 서버를 외부 인터넷에 공개하지 마세요.
-- 이미 저장된 제출은 한 번만 분석합니다. 수정한 코드는 새 제출이 필요합니다.
-- 4주차에 개념별 분석 통계와 복습 추천, 모델 평가 케이스를 추가합니다.
+실제 키는 절대로 GitHub에 업로드하거나 스크린샷/채팅에 올리지 마세요. `.gitignore`에는 `server/.env`와 `server/data/*.sqlite`가 제외되도록 설정되어 있습니다. 코드 백업과 사용자 학습 기록 백업은 서로 다릅니다.
+
+## 7. 다음 개선 과제
+
+- 현재 4주차 완성본은 기능 검증을 위한 **로컬 프로토타입**입니다. 실제 공개 서비스로 발전시키려면 사용자 인증, 사용자별 데이터 격리, API 호출 제한, 비용 관리, 모델 평가 데이터셋, 컴파일·채점을 위한 격리 환경을 별도로 구현해야 합니다.

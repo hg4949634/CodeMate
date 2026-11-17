@@ -48,6 +48,18 @@ test('3주차: 분석 결과를 저장하고 기존 기록에 연결한다', () 
   assert.equal(db.getSubmissionById(99999), null);
 });
 
+test('4주차: SQLite에 저장된 분석을 누적 통계로 읽을 수 있다', async () => {
+  const { default: problems } = await import('../data/problems.js');
+  const insights = db.getLearningInsights(problems);
+  assert.equal(insights.totals.totalSubmissions, 2);
+  assert.equal(insights.totals.analyzedSubmissions, 1);
+  assert.equal(insights.totals.potentialErrorCount, 1);
+  assert.equal(insights.totals.manualReviewCount, 1);
+  // id=1: 배열 문제에 직접 복습 표시, AI는 반복문 오류 가능성으로 분류
+  assert.equal(insights.concepts.find((c) => c.concept === '배열').manualReviewCount, 1);
+  assert.equal(insights.concepts.find((c) => c.concept === '반복문').potentialErrorCount, 1);
+});
+
 test('테스트 임시 데이터베이스 정리', () => {
   db.closeDatabase();
   rmSync(temporaryDirectory, { recursive: true, force: true });
