@@ -28,6 +28,10 @@ export default function App() {
   const [saveMessage, setSaveMessage] = useState('');
   const [saveError, setSaveError] = useState('');
   const [historyFilter, setHistoryFilter] = useState('all');
+  const [analyzingId, setAnalyzingId] = useState(null);
+  const [analysisError, setAnalysisError] = useState('');
+  const [analysisNotice, setAnalysisNotice] = useState('');
+  const [lastSavedId, setLastSavedId] = useState(null);
 
   const refreshHistory = useCallback(async () => {
     setHistoryError('');
@@ -77,6 +81,9 @@ export default function App() {
     setNote('');
     setSaveMessage('');
     setSaveError('');
+    setLastSavedId(null);
+    setAnalysisNotice('');
+    setAnalysisError('');
   }
 
   // 제출 버튼을 누르면 React → Express → SQLite 순서로 데이터가 이동합니다.
@@ -84,6 +91,8 @@ export default function App() {
     if (!selectedProblem || saving) return;
     setSaveMessage('');
     setSaveError('');
+    setAnalysisNotice('');
+    setAnalysisError('');
     if (!code.trim()) {
       setSaveError('코드를 입력한 후 제출해 주세요.');
       return;
@@ -102,11 +111,32 @@ export default function App() {
         }),
       }).then(readResponse);
       setSaveMessage(`${data.message} 제출 번호 #${data.submission.id}`);
+      setLastSavedId(data.submission.id);
       await refreshHistory();
     } catch (e) {
       setSaveError(`제출하지 못했습니다. ${e.message}`);
     } finally {
       setSaving(false);
+    }
+  }
+
+  // AI 분석은 서버의 저장된 제출 코드를 기반으로 수행합니다.
+  // 이미 분석한 기록은 서버에서 저장된 결과를 반환하므로 다시 과금되지 않습니다.
+  async function requestAnalysis(id) {
+    if (analyzingId !== null) return;
+    setAnalysisError('');
+    setAnalysisNotice('');
+    setAnalyzingId(id);
+    try {
+      const data = await fetch(`/api/submissions/${id}/analyze`, { method: 'POST' }).then(readResponse);
+      await refreshHistory();
+      setAnalysisNotice(`제출 #${id}: ${data.cached ? '저장된 AI 분석을 불러왔습니다.' : 'AI 분석을 완료했습니다.'}`);
+      setLastSavedId(null);
+      document.getElementById('history')?.scrollIntoView({ behavior: 'smooth' });
+    } catch (e) {
+      setAnalysisError(`제출 #${id} 분석 실패: ${e.message}`);
+    } finally {
+      setAnalyzingId(null);
     }
   }
 
@@ -130,13 +160,13 @@ export default function App() {
         <div className="nav-label">LEARNING SPACE</div>
         <div className="nav-current">▣ &nbsp; C언어 기초 문제</div>
         <a className="nav-link" href="#history">◷ &nbsp; 나의 제출 기록</a>
-        <div className="sidebar-foot">WEEK 02 · 코드 제출 및 기록<br/>AI 오류 분석은 3주차에 연결</div>
+        <div className="sidebar-foot">WEEK 03 · AI 코드 분석 및 힌트<br/>코드 실행·자동 채점은 제공하지 않음</div>
       </aside>
 
       <main className="main">
-        <div className="topline"><span>CODING LEARNING ASSISTANT</span><span className="status">● 2주차 개발</span></div>
+        <div className="topline"><span>CODING LEARNING ASSISTANT</span><span className="status">● 3주차 개발</span></div>
         <h1>반복되는 실수를 <em>학습의 기회</em>로.</h1>
-        <p className="lead">C언어 문제를 선택하고 코드를 제출해 보세요. 제출 기록이 자동 저장되며, 복습이 필요한 문제를 직접 표시할 수 있습니다.</p>
+        <p className="lead">C언어 문제를 선택하고 코드를 제출해 보세요. 제출 코드를 저장한 후 AI 분석을 요청해 오류 가능성과 단계별 힌트를 확인할 수 있습니다.</p>
 
         <div className="stats">
           <div className="stat"><span>준비된 문제</span><strong>{problems.length}</strong></div>
@@ -201,8 +231,11 @@ export default function App() {
                 </div>
                 {saveMessage && <p className="success" role="status">{saveMessage}</p>}
                 {saveError && <p className="error" role="alert">{saveError}</p>}
+                {lastSavedId && <button type="button" className="analysis-top-button" disabled={analyzingId !== null} onClick={() => requestAnalysis(lastSavedId)}>
+                  {analyzingId === lastSavedId ? 'AI 분석 중...' : `방금 제출한 #${lastSavedId} AI로 분석하기`}
+                </button>}
                 <div className="editor-bottom">
-                  <span>이번 주: 저장만 가능 · 코드 실행/채점/AI 분석 없음</span>
+                  <span>저장 후 AI 분석 가능 · 코드 실행 및 채점은 하지 않음</span>
                   <button type="button" disabled={saving} onClick={submitCode}>
                     {saving ? '저장 중...' : '코드 제출 · 기록 저장'}
                   </button>
@@ -214,7 +247,7 @@ export default function App() {
 
         <section className="history-panel" id="history">
           <div className="history-header">
-            <div><h2>나의 제출 기록</h2><p>최근 50개의 저장된 코드를 확인하고 다시 불러올 수 있습니다.</p></div>
+            <div><h2>나의 제출 기록</h2><p>최근 50개의 제출 코드를 확인하고, 원하는 제출에 대해 AI 분석을 요청할 수 있습니다.</p></div>
             <div className="history-actions">
               <label htmlFor="history-filter">문제 선택</label>
               <select id="history-filter" value={historyFilter} onChange={(e) => setHistoryFilter(e.target.value)}>
@@ -226,6 +259,9 @@ export default function App() {
           </div>
           {loadingHistory && <p className="notice">제출 기록을 불러오는 중입니다...</p>}
           {historyError && <p className="error" role="alert">{historyError}</p>}
+          {analysisError && <p className="error" role="alert">{analysisError}</p>}
+          {analysisNotice && <p className="success" role="status">{analysisNotice}</p>}
+          <p className="ai-disclaimer">※ AI 분석은 코드를 컴파일하거나 실행한 결과가 아닌 추정 피드백입니다. 정답 판정이 아닙니다.</p>
           {!loadingHistory && visibleSubmissions.length === 0 && !historyError && (
             <div className="empty-history">아직 저장된 제출 기록이 없습니다. 위에서 코드를 작성하고 제출해 보세요.</div>
           )}
@@ -244,12 +280,27 @@ export default function App() {
                 </div>
                 {item.note && <p className="history-note">메모: {item.note}</p>}
                 <details className="code-details"><summary>저장된 코드 보기</summary><pre>{item.code}</pre></details>
-                <button type="button" className="restore-button" onClick={() => restoreCode(item)}>이 코드를 편집기로 불러오기</button>
+                <div className="history-item-actions">
+                  <button type="button" className="restore-button" onClick={() => restoreCode(item)}>이 코드를 편집기로 불러오기</button>
+                  {!item.analysis && <button type="button" className="ai-button" disabled={analyzingId !== null} onClick={() => requestAnalysis(item.id)}>
+                    {analyzingId === item.id ? 'AI 분석 중...' : 'AI로 오류 분석하기'}
+                  </button>}
+                  {item.analysis && <span className="ai-done-badge">AI 분석 완료 · 저장됨</span>}
+                </div>
+                {item.analysis && <div className="analysis-result">
+                  <div className="analysis-heading"><strong>AI 분석 결과</strong><span>{item.analysisModel} · {item.analysis.confidence} 신뢰도 추정</span></div>
+                  <div className="analysis-tags"><span>{item.analysis.category}</span><span>관련 개념: {item.analysis.concept}</span></div>
+                  <h3>{item.analysis.summary}</h3>
+                  <p>{item.analysis.explanation}</p>
+                  <div className="hint-list"><b>단계별 힌트</b>
+                    <ol><li>{item.analysis.hint1}</li><li>{item.analysis.hint2}</li><li>{item.analysis.hint3}</li></ol>
+                  </div>
+                </div>}
               </article>
             ))}
           </div>
         </section>
-        <footer>CodeMate AI · 2주차 · 현재는 코드를 컴파일하거나 AI로 정답을 판정하지 않습니다.</footer>
+        <footer>CodeMate AI · 3주차 · AI는 오류 가능성을 설명하며 실제 코드를 컴파일하거나 채점하지 않습니다.</footer>
       </main>
     </div>
   );

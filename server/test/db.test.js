@@ -33,6 +33,21 @@ test('서버를 끄지 않고 다른 문제 기록도 추가된다', () => {
   assert.deepEqual(db.getSubmissions().map((r) => r.problemId), [1, 2]);
 });
 
+test('3주차: 분석 결과를 저장하고 기존 기록에 연결한다', () => {
+  const feedback = {
+    category: '논리 오류 가능성', concept: '반복문', confidence: '보통',
+    summary: '반복문 조건 확인', explanation: '종료 조건을 확인해 보세요.',
+    hint1: '반복 횟수를 세어 보세요.', hint2: '상한값을 비교해 보세요.', hint3: '마지막 반복 값을 계산해 보세요.',
+  };
+  const saved = db.saveAnalysis({ submissionId: 1, analysis: feedback, model: 'test-model' });
+  assert.equal(saved.analysis.summary, '반복문 조건 확인');
+  assert.equal(db.getSubmissions(2)[0].analysis.category, '논리 오류 가능성');
+  // 중복 요청은 기존 분석을 덮어쓰지 않습니다.
+  const unchanged = db.saveAnalysis({ submissionId: 1, analysis: { ...feedback, summary: '덮어쓰기 시도' }, model: 'other' });
+  assert.equal(unchanged.analysis.summary, '반복문 조건 확인');
+  assert.equal(db.getSubmissionById(99999), null);
+});
+
 test('테스트 임시 데이터베이스 정리', () => {
   db.closeDatabase();
   rmSync(temporaryDirectory, { recursive: true, force: true });

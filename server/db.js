@@ -28,6 +28,15 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_submissions_problem_id
     ON submissions (problem_id);
+
+  -- 3주차: 기존 submissions를 지우지 않고 분석 결과 테이블을 추가합니다.
+  CREATE TABLE IF NOT EXISTS analyses (
+    submission_id INTEGER PRIMARY KEY,
+    analysis_json TEXT NOT NULL,
+    model TEXT NOT NULL,
+    analyzed_at TEXT NOT NULL,
+    FOREIGN KEY (submission_id) REFERENCES submissions(id)
+  );
 `);
 
 // 물음표(?)에 값을 별도로 전달하는 준비된 SQL 문을 사용합니다.
@@ -50,6 +59,9 @@ function toSubmission(row) {
     needsReview: row.needs_review === 1,
     note: row.note,
     createdAt: row.created_at,
+    analysis: row.analysis_json ? JSON.parse(row.analysis_json) : null,
+    analyzedAt: row.analyzed_at ?? null,
+    analysisModel: row.analysis_model ?? null,
   };
 }
 
@@ -62,15 +74,19 @@ export function createSubmission({ problemId, code, needsReview, note }) {
 export function getSubmissions(problemId = null, limit = 50) {
   if (problemId === null) {
     const rows = db.prepare(`
-      SELECT id, problem_id, code, needs_review, note, created_at
-      FROM submissions ORDER BY id DESC LIMIT ?
+      SELECT s.id, s.problem_id, s.code, s.needs_review, s.note, s.created_at,
+             a.analysis_json, a.analyzed_at, a.model AS analysis_model
+      FROM submissions AS s LEFT JOIN analyses AS a ON s.id = a.submission_id
+      ORDER BY s.id DESC LIMIT ?
     `).all(limit);
     return rows.map(toSubmission);
   }
 
   const rows = db.prepare(`
-    SELECT id, problem_id, code, needs_review, note, created_at
-    FROM submissions WHERE problem_id = ? ORDER BY id DESC LIMIT ?
+    SELECT s.id, s.problem_id, s.code, s.needs_review, s.note, s.created_at,
+           a.analysis_json, a.analyzed_at, a.model AS analysis_model
+    FROM submissions AS s LEFT JOIN analyses AS a ON s.id = a.submission_id
+    WHERE s.problem_id = ? ORDER BY s.id DESC LIMIT ?
   `).all(problemId, limit);
   return rows.map(toSubmission);
 }
@@ -88,6 +104,28 @@ export function getSubmissionStats() {
     reviewCount: row.reviewCount,
     attemptedProblems: row.attemptedProblems,
   };
+}
+
+// 3주차: 단일 제출 기록을 가져옵니다. API는 이 기록을 기준으로 분석합니다.
+export function getSubmissionById(id) {
+  const row = db.prepare(`
+    SELECT s.id, s.problem_id, s.code, s.needs_review, s.note, s.created_at,
+           a.analysis_json, a.analyzed_at, a.model AS analysis_model
+    FROM submissions AS s LEFT JOIN analyses AS a ON s.id = a.submission_id
+    WHERE s.id = ?
+  `).get(id);
+  return row ? toSubmission(row) : null;
+}
+
+// 이미 분석된 제출은 다시 과금하지 않도록 한 번만 저장합니다.
+export function saveAnalysis({ submissionId, analysis, model }) {
+  const analyzedAt = new Date().toISOString();
+  db.prepare(`
+    INSERT INTO analyses (submission_id, analysis_json, model, analyzed_at)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(submission_id) DO NOTHING
+  `).run(submissionId, JSON.stringify(analysis), model, analyzedAt);
+  return getSubmissionById(submissionId);
 }
 
 // 테스트 전용으로 연결을 닫을 때만 사용합니다.

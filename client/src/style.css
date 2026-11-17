@@ -88,3 +88,24 @@ footer { color: #768da9; font-size: 12px; margin-top: 24px; }
 .restore-button { margin-top: 12px; padding: 9px 12px; background: #1d4758; border: 1px solid #347b7b; color: #b7eee8; border-radius: 8px; cursor: pointer; font-size: 12px; }
 .restore-button:hover { background: #275e69; }
 @media (max-width: 740px) { .history-header { flex-direction: column; } .history-actions { width: 100%; flex-wrap: wrap; } .history-panel { padding: 16px; } }
+
+/* ────────── 3주차: AI 분석 UI ────────── */
+.analysis-top-button,.ai-button { background: #146c7b; border: 1px solid #41b3b2; color: #e7fffc; padding: 11px 15px; border-radius: 9px; cursor: pointer; font-weight: 700; font-size: 12px; }
+.analysis-top-button { display: block; margin: 12px 0 0 auto; }
+.analysis-top-button:hover:not(:disabled),.ai-button:hover:not(:disabled){ background:#23848a; }
+.analysis-top-button:disabled,.ai-button:disabled{ opacity:.55; cursor:wait; }
+.ai-disclaimer { color: #9fb3cc; font-size: 12px; background: #101e34; border-left: 3px solid #54dbce; padding: 11px 14px; margin: 17px 0; }
+.history-item-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:12px; }
+.history-item-actions .restore-button { margin-top:0; }
+.ai-done-badge { color:#75e8d7; font-size:12px; font-weight:700; }
+.analysis-result { margin-top:17px; border:1px solid #2b787e; border-radius:13px; background:linear-gradient(135deg,#142d3d,#111f36); padding:19px 22px; }
+.analysis-heading { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; }
+.analysis-heading strong { color:#a8fff1; font-size:16px; }
+.analysis-heading span { color:#93aac3; font-size:11px; }
+.analysis-tags { display:flex; gap:8px; flex-wrap:wrap; margin:14px 0; }
+.analysis-tags span { background:#1c4c55; color:#a4ebdf; font-size:12px; padding:6px 10px; border-radius:7px; }
+.analysis-result h3 { font-size:17px; margin:13px 0 9px; }
+.analysis-result p { font-size:13px; line-height:1.8; color:#c1d3e6; white-space:pre-wrap; }
+.hint-list { border-top:1px solid #315565; margin-top:18px; padding-top:15px; color:#baf4ea; font-size:13px; }
+.hint-list ol { color:#d5e6f3; line-height:1.85; padding-left:23px; }
+.hint-list li { margin-top:7px; }
