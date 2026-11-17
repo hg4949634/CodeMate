@@ -48,3 +48,43 @@ textarea:focus { outline: 2px solid #54dbce; outline-offset: 1px; }
 footer { color: #768da9; font-size: 12px; margin-top: 24px; }
 @media (max-width: 950px) { .sidebar { display:none; } .workspace { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .main{padding:20px;} .stats{gap:7px;} .stat{padding:13px;} .stat strong {font-size:20px;} .editor-bottom {flex-direction: column;align-items:flex-start;} }
+
+/* ────────── 2주차: 제출과 기록 화면 ────────── */
+.nav-link { display: block; padding: 15px; color: #a8c4df; text-decoration: none; font-size: 14px; margin-top: 8px; border-radius: 11px; }
+.nav-link:hover { background: #1b2f4b; color: #fff; }
+.submission-options { margin-top: 18px; padding: 16px; border: 1px solid #294562; border-radius: 11px; background: #101d32; }
+.review-check { display: flex; gap: 11px; align-items: center; color: #d9ecf8; font-size: 13px; cursor: pointer; margin-bottom: 14px; }
+.review-check input { width: 18px; height: 18px; accent-color: #54dbce; cursor: pointer; }
+.note-label { display: block; font-weight: 700; font-size: 12px; color: #a8bfda; margin-bottom: 8px; }
+.note-input { width: 100%; border: 1px solid #34516c; background: #0b1528; color: #edf5fc; border-radius: 8px; padding: 12px; font: inherit; font-size: 13px; }
+.note-input:focus { outline: 2px solid #54dbce; }
+.editor-bottom button { background: #136c72; border-color: #25878a; color: white; font-weight: 700; cursor: pointer; }
+.editor-bottom button:hover:not(:disabled) { background: #197e83; }
+.editor-bottom button:disabled { opacity: .65; cursor: wait; }
+.success { color: #aff7e5; background: #193e3d; border: 1px solid #2a7270; padding: 12px; border-radius: 9px; font-size: 13px; }
+.history-panel { margin-top: 20px; padding: 25px; border-radius: 16px; background: #14243a; border: 1px solid #2b405e; scroll-margin-top: 20px; }
+.history-header { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
+.history-header p { color: #91aac4; line-height: 1.6; font-size: 13px; }
+.history-actions { display: flex; align-items: center; gap: 10px; }
+.history-actions label { color: #94abc6; font-size: 12px; white-space: nowrap; }
+.history-actions select, .secondary-button { color: #dfecfa; border: 1px solid #36516f; border-radius: 8px; padding: 10px 12px; background: #1b2b42; font: inherit; font-size: 12px; }
+.secondary-button { cursor: pointer; }
+.secondary-button:hover { background: #264261; }
+.empty-history { border: 1px dashed #35506e; border-radius: 12px; padding: 28px; text-align: center; color: #90a9c5; }
+.history-list { display: grid; gap: 13px; }
+.history-item { background: #101d32; border: 1px solid #314865; border-radius: 12px; padding: 17px 19px; }
+.history-item-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.history-item-top > div { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.history-number { color: #54dbce; font-weight: 800; }
+.history-item strong { font-size: 14px; }
+.history-item time { color: #829ab8; font-size: 12px; }
+.saved-badge, .review-badge { border-radius: 999px; padding: 5px 9px; font-size: 10px; font-weight: 800; }
+.saved-badge { background: #273954; color: #bbd1ed; }
+.review-badge { background: #58402a; color: #ffd6a1; }
+.history-note { color: #b4c7db; font-size: 12px; margin: 12px 0 5px; }
+.code-details { color: #a9c5df; margin-top: 13px; }
+.code-details summary { cursor: pointer; font-size: 12px; }
+.code-details pre { color: #d9eafb; background: #0a1426; border: 1px solid #293e58; padding: 15px; overflow-x: auto; border-radius: 9px; white-space: pre; line-height: 1.65; font: 12px Consolas, monospace; }
+.restore-button { margin-top: 12px; padding: 9px 12px; background: #1d4758; border: 1px solid #347b7b; color: #b7eee8; border-radius: 8px; cursor: pointer; font-size: 12px; }
+.restore-button:hover { background: #275e69; }
+@media (max-width: 740px) { .history-header { flex-direction: column; } .history-actions { width: 100%; flex-wrap: wrap; } .history-panel { padding: 16px; } }

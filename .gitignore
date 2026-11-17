@@ -10,3 +10,9 @@ dist/
 # Editor / OS
 .DS_Store
 .vscode/
+
+# Week 2: local SQLite data (contains submitted code and notes)
+server/data/*.sqlite
+server/data/*.sqlite-*
+server/data/*.db
+server/data/*.db-*
